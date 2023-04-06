@@ -3,7 +3,7 @@
 **SpringBoot application that exposes APIs for retrieving Crypto statistic.**
 ## Requirements
 ***
-**Java 11 or docker insalled**
+**Java 11 or docker installed**
 ## StartUp
 ***
 **Run `startup` or `startup.bat`.</br>Default port is specified in application.yml - `8080`.**
