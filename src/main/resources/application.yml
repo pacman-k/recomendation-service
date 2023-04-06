@@ -1,0 +1,17 @@
+server:
+  port: 8080
+
+blacklist:
+  ips:
+    123.123.123.123,
+    127.127.127.127
+
+csv-dao-config:
+  datasourcePath: classpath:crypto-statistic
+  filePattern: $SYMBOL_values.csv
+  supportedCryptos:
+    - BTC
+    - DOGE
+    - ETH
+    - LTC
+    - XRP
