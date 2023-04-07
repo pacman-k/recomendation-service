@@ -44,7 +44,9 @@ public class CryptoStatsServiceImpl implements CryptoStatsService {
     public Optional<CryptoStatAggregated> getAggregatedStatsForCrypto(String symbol, Integer months) {
         cryptoValidator.validateSupportedCrypto(symbol);
         var currencySymbol = symbol.toUpperCase();
-        var cryptoStats = filterWithSpecifiedMonthCount(cryptoStatsDao.getStatsForCrypto(currencySymbol), months);
+        var cryptoStats = Objects.isNull(months)
+                            ? cryptoStatsDao.getStatsForCrypto(currencySymbol)
+                            : cryptoStatsDao.getStatsForCryptoWithMonthRange(currencySymbol, nowPlusMonths(-months), nowPlusMonths(1));
         return Optional.ofNullable(aggregateStats(currencySymbol, cryptoStats));
     }
 
@@ -57,8 +59,11 @@ public class CryptoStatsServiceImpl implements CryptoStatsService {
      */
     @Override
     public SortedSet<CryptoStatAggregated> getAggregatedStatsPerCryptoInDescendingOrder(Integer months) {
-        return cryptoStatsDao.getAllCryptoStats().entrySet().stream()
-                .map(entry -> aggregateStats(entry.getKey(), filterWithSpecifiedMonthCount(entry.getValue(), months)))
+        var cryptoStats = Objects.isNull(months)
+                            ? cryptoStatsDao.getAllCryptoStats()
+                            : cryptoStatsDao.getAllCryptoStatsWithMonthRange(nowPlusMonths(-months), nowPlusMonths(1));
+        return cryptoStats.keySet().stream()
+                .map(key -> aggregateStats(key, cryptoStats.get(key)))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toCollection(() -> new TreeSet<>(new CryptoStatNormalizedRangeComparator())));
     }
@@ -71,22 +76,21 @@ public class CryptoStatsServiceImpl implements CryptoStatsService {
      */
     @Override
     public Optional<CryptoStatAggregated> getCryptoWithHighestNormalizedRangeForDay(LocalDate date) {
-        return cryptoStatsDao.getAllCryptoStats().entrySet().stream()
+        return cryptoStatsDao.getAllCryptoStatsWithMonthRange(date, date.plusMonths(1))
+                .entrySet().stream()
                 .map(entry -> aggregateStats(entry.getKey(), filterByDateSpan(entry.getValue(), date, date.plusDays(1))))
                 .filter(Objects::nonNull)
                 .max(new CryptoStatNormalizedRangeComparator());
     }
 
-    private List<CryptoStat> filterWithSpecifiedMonthCount(List<CryptoStat> cryptoStats, Integer months) {
-        var end = LocalDate.now(ZoneOffset.UTC);
-        return months == null
-                ? cryptoStats
-                : filterByDateSpan(cryptoStats, end.minusMonths(months), end.plusDays(1));
+    private LocalDate nowPlusMonths(int months) {
+        return LocalDate.now(ZoneOffset.UTC).plusMonths(months);
     }
 
     private List<CryptoStat> filterByDateSpan(List<CryptoStat> cryptoStats, LocalDate start, LocalDate end) {
         return cryptoStats.parallelStream()
-                .filter(cr -> cr.getTimestamp().isAfter(start.atStartOfDay()) && cr.getTimestamp().isBefore(end.atStartOfDay()))
+                .filter(cr -> cr.getTimestamp().isAfter(start.atStartOfDay())
+                                && cr.getTimestamp().isBefore(end.atStartOfDay()))
                 .collect(Collectors.toList());
     }
 

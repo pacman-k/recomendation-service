@@ -9,7 +9,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -25,7 +25,9 @@ import java.util.SortedSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -48,20 +50,25 @@ public class CryptoStatsServiceImplTest {
     @Mock
     private CryptoValidator validator;
     @InjectMocks
-    private CryptoStatsServiceImpl service;
+    private CryptoStatsServiceImpl service = new CryptoStatsServiceImpl();
 
     @Before
     public void setUp() {
         when(dao.getAllCryptoStats()).thenReturn(resource);
+        when(dao.getAllCryptoStatsWithMonthRange(any(LocalDate.class), any(LocalDate.class))).thenReturn(resource);
         when(dao.getStatsForCrypto(anyString())).thenAnswer(s ->{
-            var param = s.getArgumentAt(0 ,String.class);
+            var param = s.getArgument(0 ,String.class);
+            return resource.getOrDefault(param, Collections.emptyList());
+        });
+        when(dao.getStatsForCryptoWithMonthRange(anyString(), any(LocalDate.class), any(LocalDate.class))).thenAnswer(s ->{
+            var param = s.getArgument(0 ,String.class);
             return resource.getOrDefault(param, Collections.emptyList());
         });
     }
 
     @After
     public void tearDown() {
-        verifyNoMoreInteractions(validator);
+        verifyNoMoreInteractions(validator, dao);
     }
 
     @Test
@@ -73,13 +80,14 @@ public class CryptoStatsServiceImplTest {
         assertEquals(result.get().getOldestPrice().doubleValue(), 3.26, 0.001);
         assertEquals(result.get().getNewestPrice().doubleValue(), 3.11, 0.001);
         verify(validator, times(1)).validateSupportedCrypto(BTC);
+        verify(dao, times(1)).getStatsForCrypto(BTC);
     }
 
     @Test
     public void testReturnByCryptoWithSpecifiedMonths() {
-        assertFalse(service.getAggregatedStatsForCrypto(ETH, 1).isPresent());
         assertTrue(service.getAggregatedStatsForCrypto(ETH, 2).isPresent());
-        verify(validator, times(2)).validateSupportedCrypto(ETH);
+        verify(validator, times(1)).validateSupportedCrypto(ETH);
+        verify(dao, times(1)).getStatsForCryptoWithMonthRange(eq(ETH), eq(DATE.toLocalDate()), eq(LocalDate.now(ZoneOffset.UTC).plusMonths(1)));
     }
 
     @Test
@@ -87,12 +95,13 @@ public class CryptoStatsServiceImplTest {
         SortedSet<CryptoStatAggregated> result = service.getAggregatedStatsPerCryptoInDescendingOrder(null);
         assertEquals(result.first().getSymbol(), ETH);
         assertEquals(result.last().getSymbol(), DOGE);
+        verify(dao, times(1)).getAllCryptoStats();
     }
 
     @Test
     public void shouldReturnResultSetWithSpecifiedMonths() {
-        assertTrue(service.getAggregatedStatsPerCryptoInDescendingOrder(1).isEmpty());
         assertFalse(service.getAggregatedStatsPerCryptoInDescendingOrder(2).isEmpty());
+        verify(dao, times(1)).getAllCryptoStatsWithMonthRange(eq(DATE.toLocalDate()), eq(LocalDate.now(ZoneOffset.UTC).plusMonths(1)));
     }
 
     @Test
@@ -100,12 +109,15 @@ public class CryptoStatsServiceImplTest {
         Optional<CryptoStatAggregated> result = service.getCryptoWithHighestNormalizedRangeForDay(DATE.toLocalDate());
         assertTrue(result.isPresent());
         assertEquals(result.get().getSymbol(), DOGE);
+        verify(dao, times(1)).getAllCryptoStatsWithMonthRange(eq(DATE.toLocalDate()), eq(DATE.plusMonths(1).toLocalDate()));
     }
 
     @Test
     public void shouldEmptyResultForDayWithNoData() {
-        Optional<CryptoStatAggregated> result = service.getCryptoWithHighestNormalizedRangeForDay(DATE.plusDays(1).toLocalDate());
+        var emptyDay = DATE.plusDays(1);
+        Optional<CryptoStatAggregated> result = service.getCryptoWithHighestNormalizedRangeForDay(emptyDay.toLocalDate());
         assertFalse(result.isPresent());
+        verify(dao, times(1)).getAllCryptoStatsWithMonthRange(eq(emptyDay.toLocalDate()), eq(emptyDay.plusMonths(1).toLocalDate()));
     }
 
     private static List<CryptoStat> generateCryptoStats(String symbol, double max, double min, double oldest, double newest) {

@@ -13,9 +13,9 @@ public interface CryptoStatsDao {
 
     List<CryptoStat> getStatsForCrypto(String symbol);
 
-    List<CryptoStat> getStatsForCryptoWithRange(String symbol, LocalDate start, LocalDate end);
+    List<CryptoStat> getStatsForCryptoWithMonthRange(String symbol, LocalDate start, LocalDate end);
 
     Map<String, List<CryptoStat>> getAllCryptoStats();
 
-    Map<String, List<CryptoStat>> getAllCryptoStatsWithRange(LocalDate from, LocalDate to);
+    Map<String, List<CryptoStat>> getAllCryptoStatsWithMonthRange(LocalDate from, LocalDate to);
 }

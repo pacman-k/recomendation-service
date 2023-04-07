@@ -47,7 +47,7 @@ public class CryptoStatsCSVDao implements CryptoStatsDao {
     }
 
     @Override
-    public List<CryptoStat> getStatsForCryptoWithRange(String symbol, LocalDate start, LocalDate end) {
+    public List<CryptoStat> getStatsForCryptoWithMonthRange(String symbol, LocalDate start, LocalDate end) {
         var fileNamePatterns = getFileNamePatternsForRange(symbol, start, end);
         return retrieveCryptoStats(fileNamePatterns).collect(Collectors.toList());
     }
@@ -65,7 +65,7 @@ public class CryptoStatsCSVDao implements CryptoStatsDao {
     }
 
     @Override
-    public Map<String, List<CryptoStat>> getAllCryptoStatsWithRange(LocalDate from, LocalDate to) {
+    public Map<String, List<CryptoStat>> getAllCryptoStatsWithMonthRange(LocalDate from, LocalDate to) {
         var fileNamePatterns = config.getSupportedCryptos().stream()
                 .map(symbol -> getFileNamePatternsForRange(symbol, from, to))
                 .flatMap(Collection::stream)
