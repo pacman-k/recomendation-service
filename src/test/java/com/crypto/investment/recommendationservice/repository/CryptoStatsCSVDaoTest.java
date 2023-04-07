@@ -29,7 +29,7 @@ public class CryptoStatsCSVDaoTest {
     @Before
     public void setUp() {
         when(config.getDatasourcePath()).thenReturn(Paths.get("src", "test", "resources"));
-        when(config.getFilePattern()).thenReturn("$SYMBOL_values.csv");
+        when(config.getFilePattern()).thenReturn("$SYMBOL_$DATE_values.csv");
         when(config.getSupportedCryptos()).thenReturn(Set.of(BTC, ETH));
     }
 

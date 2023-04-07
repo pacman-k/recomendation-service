@@ -10,6 +10,7 @@ import java.util.Set;
 @ConfigurationProperties("csv-dao-config")
 public class CSVDaoConfig implements DaoConfig {
     public static String CRYPTO_PLACEHOLDER = "$SYMBOL";
+    public static String DATE_PLACEHOLDER = "$DATE";
 
     private Path datasourcePath;
     private String filePattern;

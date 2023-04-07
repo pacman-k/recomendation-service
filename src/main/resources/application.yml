@@ -8,7 +8,7 @@ blacklist:
 
 csv-dao-config:
   datasourcePath: classpath:crypto-statistic
-  filePattern: $SYMBOL_values.csv
+  filePattern: $SYMBOL_$DATE_values.csv
   supportedCryptos:
     - BTC
     - DOGE
