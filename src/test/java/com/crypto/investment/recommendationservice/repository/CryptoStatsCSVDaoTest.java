@@ -9,6 +9,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
@@ -36,20 +37,47 @@ public class CryptoStatsCSVDaoTest {
     @Test
     public void shouldReturnStatsForSpecifiedCrypto() {
         var result = dao.getStatsForCrypto(BTC);
+        assertEquals(result.size(), 6);
+        result.stream().map(CryptoStat::getSymbol).forEach(s -> assertEquals(s, BTC));
+    }
+
+    @Test
+    public void shouldReturnStatsForSpecifiedCryptoWithMonthsRange() {
+        var result = dao.getStatsForCryptoWithMonthRange(BTC, LocalDate.of(2022, 1, 1), LocalDate.of(2022, 2, 1));
         assertEquals(result.size(), 3);
         result.stream().map(CryptoStat::getSymbol).forEach(s -> assertEquals(s, BTC));
     }
 
     @Test
-    public void shouldReturnEmptyForIfNotFound() {
+    public void shouldReturnEmptyStatsForSpecifiedCryptoIfNotFound() {
         assertEquals(dao.getStatsForCrypto("RAND").size(), 0);
+    }
+
+    @Test
+    public void shouldReturnEmptyStatsForSpecifiedCryptoWithMonthsRangeWithoutData() {
+        var result = dao.getStatsForCryptoWithMonthRange(BTC, LocalDate.of(2022, 3, 1), LocalDate.of(2022, 4, 1));
+        assertEquals(result.size(), 0);
     }
 
     @Test
     public void shouldReturnAllCryptoStats() {
         var result = dao.getAllCryptoStats();
         assertTrue(result.containsKey(BTC) && result.containsKey(ETH));
+        assertEquals(6, result.get(BTC).size());
+        assertEquals(6, result.get(ETH).size());
+    }
+
+    @Test
+    public void shouldReturnAllCryptoStatsForSpecifiedRange() {
+        var result = dao.getAllCryptoStatsWithMonthRange(LocalDate.of(2022, 1, 1), LocalDate.of(2022, 2, 1));
+        assertTrue(result.containsKey(BTC) && result.containsKey(ETH));
         assertEquals(3, result.get(BTC).size());
         assertEquals(3, result.get(ETH).size());
+    }
+
+    @Test
+    public void shouldReturnEmptyCryptoStatsForSpecifiedRangeWithoutData() {
+        var result = dao.getAllCryptoStatsWithMonthRange(LocalDate.of(2022, 3, 1), LocalDate.of(2022, 4, 1));
+        assertTrue(result.isEmpty());
     }
 }

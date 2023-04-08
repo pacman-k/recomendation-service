@@ -14,7 +14,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -48,7 +47,7 @@ public class CryptoStatsCSVDao implements CryptoStatsDao {
 
     @Override
     public List<CryptoStat> getStatsForCryptoWithMonthRange(String symbol, LocalDate start, LocalDate end) {
-        var fileNamePatterns = getFileNamePatternsForRange(symbol, start, end);
+        var fileNamePatterns = getFileNamePatternsForMonthRange(symbol, start, end);
         return retrieveCryptoStats(fileNamePatterns).collect(Collectors.toList());
     }
 
@@ -67,7 +66,7 @@ public class CryptoStatsCSVDao implements CryptoStatsDao {
     @Override
     public Map<String, List<CryptoStat>> getAllCryptoStatsWithMonthRange(LocalDate from, LocalDate to) {
         var fileNamePatterns = config.getSupportedCryptos().stream()
-                .map(symbol -> getFileNamePatternsForRange(symbol, from, to))
+                .map(symbol -> getFileNamePatternsForMonthRange(symbol, from, to))
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
         return retrieveCryptoStats(fileNamePatterns).collect(Collectors.groupingBy(CryptoStat::getSymbol));
@@ -83,7 +82,7 @@ public class CryptoStatsCSVDao implements CryptoStatsDao {
         try (var stream = openPathStream(fileNamePatterns)) {
            return stream.collect(Collectors.toList());
         } catch (IOException e) {
-            LOGGER.error("error during reading file");
+            LOGGER.error("error accessing file", e);
             throw new CSVDaoReadException("Internal Server Error");
         }
     }
@@ -95,8 +94,7 @@ public class CryptoStatsCSVDao implements CryptoStatsDao {
 
     private boolean matchFile(Collection<Pattern> fileNamePatterns, Path file) {
         return fileNamePatterns.stream()
-                .map(Pattern::asPredicate)
-                .anyMatch(s -> s.test(file.getFileName().toString()));
+                .anyMatch(pat -> pat.asPredicate().test(file.getFileName().toString()));
     }
 
     private List<CryptoStat> readCryptoStatsFromFile(Path pathToFile) {
@@ -118,10 +116,10 @@ public class CryptoStatsCSVDao implements CryptoStatsDao {
                               new BigDecimal(cryptoStatFields[2]));
     }
 
-    private List<Pattern> getFileNamePatternsForRange(String symbol, LocalDate from, LocalDate to) {
+    private List<Pattern> getFileNamePatternsForMonthRange(String symbol, LocalDate from, LocalDate to) {
         var filePatterns = new ArrayList<Pattern>();
-        for (var start = from; start.isBefore(to); start = start.plusMonths(1)) {
-            var pattern = getFileNamePattern(symbol, start.format(DateTimeFormatter.ofPattern("yyyy-MM")));
+        for (var iter = from; iter.isBefore(to); iter = iter.plusMonths(1)) {
+            var pattern = getFileNamePattern(symbol, iter.format(CSVDaoConfig.FILE_DATE_FORMATTER));
             filePatterns.add(pattern);
         }
         return filePatterns;

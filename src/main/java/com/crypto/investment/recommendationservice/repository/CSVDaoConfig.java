@@ -4,6 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 import java.nio.file.Path;
+import java.time.format.DateTimeFormatter;
 import java.util.Set;
 
 @Component
@@ -11,6 +12,7 @@ import java.util.Set;
 public class CSVDaoConfig implements DaoConfig {
     public static String CRYPTO_PLACEHOLDER = "$SYMBOL";
     public static String DATE_PLACEHOLDER = "$DATE";
+    public static final DateTimeFormatter FILE_DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM");
 
     private Path datasourcePath;
     private String filePattern;
