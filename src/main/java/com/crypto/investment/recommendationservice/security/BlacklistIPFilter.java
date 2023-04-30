@@ -19,15 +19,15 @@ import java.util.Set;
 @Component
 @Order(1)
 public class BlacklistIPFilter implements Filter {
-    private static Logger LOGGER = LogManager.getLogger(BlacklistIPFilter.class);
+    private static final Logger LOGGER = LogManager.getLogger(BlacklistIPFilter.class);
 
     @Value("${blacklist.ips}")
-    private Set<String> ips;
+    private Set<String> ipsBlackList;
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         var httpServletResponse = (HttpServletResponse) response;
-        if (ips.contains(request.getRemoteAddr())) {
+        if (ipsBlackList.contains(request.getRemoteAddr())) {
             LOGGER.warn("Unauthorized access by ip from blacklist(" + request.getRemoteAddr() + ")");
             httpServletResponse.setStatus(HttpStatus.UNAUTHORIZED.value());
         } else {

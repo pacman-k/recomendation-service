@@ -38,7 +38,7 @@ public class CryptoStatsServiceImpl implements CryptoStatsService {
      *                  If {@value `null`} - aggregated statistic will be based on the whole period
      * @return specified crypto aggregated statistic (MAX/MIN/NEWEST/OLDEST){@link CryptoStatAggregated}
      *          for the whole period or for the last number of months
-     * @throws CryptoNotSupportedException
+     * @throws CryptoNotSupportedException if specified is crypto is not supported
      */
     @Override
     public Optional<CryptoStatAggregated> getAggregatedStatsForCrypto(String symbol, Integer months) {
